@@ -38,6 +38,6 @@ The installable ZIP is generated in `build/distributions/`. To test in an isolat
 
 ## Release
 
-The plugin is free to use under the [license](LICENSE.md); the source repository may remain private. Before Marketplace submission, create a vendor profile, accept the Marketplace Developer Agreement, provide the EULA and privacy policy, sign the ZIP with a certificate kept outside Git, and manually inspect the final ZIP and sandbox behavior. The first publication must be uploaded manually. Do not upload credentials or local `.env` files.
+The plugin is free to use under the [license](LICENSE.md). Its source repository is public, but the license is proprietary rather than open source. Before Marketplace submission, create a vendor profile, accept the Marketplace Developer Agreement, provide the EULA and privacy policy, sign the ZIP with a certificate kept outside Git, and manually inspect the final ZIP and sandbox behavior. The first publication must be uploaded manually. Do not upload credentials or local `.env` files.
 
 Contact: mrlshinian@gmail.com

@@ -1,6 +1,6 @@
 # Mario AI Debug Assistant — Freeware License
 
-Copyright © 2026 mario. All rights reserved.
+Copyright © 2026 mario. All rights reserved. Mario is the licensor of this plugin. This agreement is between mario and the plugin user; JetBrains is not a party to it.
 
 You may install and use the unmodified plugin at no charge for personal or commercial purposes. You may make backup copies for your own use.
 
