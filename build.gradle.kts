@@ -28,8 +28,8 @@ intellijPlatform {
         ides { ide("IC", "2025.1") }
     }
     signing {
-        certificateChain = providers.environmentVariable("CERTIFICATE_CHAIN")
-        privateKey = providers.environmentVariable("PRIVATE_KEY")
+        certificateChainFile = layout.file(providers.environmentVariable("SIGNING_CERTIFICATE_FILE").map { file(it) })
+        privateKeyFile = layout.file(providers.environmentVariable("SIGNING_PRIVATE_KEY_FILE").map { file(it) })
         password = providers.environmentVariable("PRIVATE_KEY_PASSWORD")
     }
     pluginConfiguration {
@@ -41,4 +41,5 @@ intellijPlatform {
 
 tasks {
     test { useJUnitPlatform() }
+    named("verifyPluginSignature") { dependsOn("signPlugin") }
 }
