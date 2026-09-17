@@ -14,7 +14,7 @@ class DebugSettings : PersistentStateComponent<DebugSettings.State> {
         var aiProvider: String = "DEEPSEEK",
         var aiBaseUrl: String = "https://api.deepseek.com",
         var aiApiKey: String = "",
-        var aiModel: String = "deepseek-chat",
+        var aiModel: String = "deepseek-flash",
         var lokiBaseUrl: String = "",
         var lokiToken: String = "",
         var lokiQuery: String = ""

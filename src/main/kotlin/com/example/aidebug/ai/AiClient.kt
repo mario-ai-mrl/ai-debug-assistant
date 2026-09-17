@@ -67,7 +67,14 @@ class AiClient(private val settings: DebugSettings.State) {
             add("messages", com.google.gson.JsonArray().apply { add(message) })
             addProperty("temperature", 0.1)
         }
-        val request = HttpRequest.newBuilder(URI.create(settings.aiBaseUrl.trimEnd('/') + "/v1/chat/completions"))
+        val provider = runCatching { AiProviderPreset.valueOf(settings.aiProvider) }
+            .getOrDefault(AiProviderPreset.CUSTOM)
+        val chatPath = if (provider == AiProviderPreset.DEEPSEEK) {
+            "/chat/completions"
+        } else {
+            "/v1/chat/completions"
+        }
+        val request = HttpRequest.newBuilder(URI.create(settings.aiBaseUrl.trimEnd('/') + chatPath))
             .header("Authorization", "Bearer ${settings.aiApiKey}")
             .header("Content-Type", "application/json")
             .POST(HttpRequest.BodyPublishers.ofString(body.toString()))

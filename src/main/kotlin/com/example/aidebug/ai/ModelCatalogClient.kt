@@ -14,7 +14,11 @@ class ModelCatalogClient(
     private val client = HttpClient.newHttpClient()
 
     fun fetchModels(): List<String> {
-        val endpoint = if (provider == AiProviderPreset.OLLAMA) "/api/tags" else "/v1/models"
+        val endpoint = when (provider) {
+            AiProviderPreset.DEEPSEEK -> "/models"
+            AiProviderPreset.OLLAMA -> "/api/tags"
+            else -> "/v1/models"
+        }
         val requestBuilder = HttpRequest.newBuilder(URI.create(baseUrl.trimEnd('/') + endpoint)).GET()
         if (apiKey.isNotBlank() && provider != AiProviderPreset.OLLAMA) {
             requestBuilder.header("Authorization", "Bearer $apiKey")
