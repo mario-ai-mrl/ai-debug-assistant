@@ -1,11 +1,21 @@
 <idea-plugin>
-    <id>com.example.aidebug.assistant</id>
-    <name>AI Debug Assistant</name>
-    <vendor email="dev@example.com">AI Debug Assistant</vendor>
+    <id>io.github.marioaimrl.aidebugassistant</id>
+    <name>Mario AI Debug Assistant</name>
+    <vendor email="mrlshinian@gmail.com">mario</vendor>
 
     <description><![CDATA[
-        Analyze local code and Loki logs with DeepSeek or any OpenAI-compatible model.
+        <p>Investigate bugs using the current editor selection, stack traces, Git changes, and optional Loki logs.</p>
+        <ul>
+          <li>Analyze evidence with DeepSeek, OpenAI, Ollama, or a custom OpenAI-compatible endpoint.</li>
+          <li>Navigate to code referenced in a stack trace and review AI-generated unified diffs before applying them.</li>
+          <li>Keep API credentials in the IDE Password Safe.</li>
+        </ul>
+        <p>AI requests are initiated by the user and require confirmation before code or logs are sent to the configured provider. No account or telemetry service is operated by this plugin.</p>
     ]]></description>
+
+    <change-notes><![CDATA[
+        <p>Initial release: AI-assisted bug analysis, optional Loki log context, model discovery, and reviewed patch application.</p>
+    ]]></change-notes>
 
     <depends>com.intellij.modules.platform</depends>
 

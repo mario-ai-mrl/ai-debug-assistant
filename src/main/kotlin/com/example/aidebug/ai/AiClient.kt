@@ -8,12 +8,12 @@ import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
+import java.time.Duration
 
 class AiClient(private val settings: DebugSettings.State) {
-    private val client = HttpClient.newHttpClient()
+    private val client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(15)).build()
 
     fun analyze(context: DebugContext): String {
-        require(settings.aiApiKey.isNotBlank()) { "请先配置 AI API Key" }
         val prompt = """
             你是一名资深软件工程师，请分析下面的 Bug。
             输出：最可能根因、代码/日志证据、涉及位置、修复建议、验证步骤。
@@ -36,7 +36,6 @@ class AiClient(private val settings: DebugSettings.State) {
     }
 
     fun generatePatch(context: DebugContext): String {
-        require(settings.aiApiKey.isNotBlank()) { "请先配置 AI API Key" }
         val prompt = """
             你是一名资深软件工程师。请根据下面的 Bug 上下文生成最小可行修复补丁。
             只输出标准 unified diff，不要 Markdown 代码围栏，不要修改无关代码。
@@ -69,16 +68,25 @@ class AiClient(private val settings: DebugSettings.State) {
         }
         val provider = runCatching { AiProviderPreset.valueOf(settings.aiProvider) }
             .getOrDefault(AiProviderPreset.CUSTOM)
+        require(provider == AiProviderPreset.OLLAMA || settings.aiApiKey.isNotBlank()) {
+            "请先配置 AI API Key"
+        }
         val chatPath = if (provider == AiProviderPreset.DEEPSEEK) {
             "/chat/completions"
         } else {
             "/v1/chat/completions"
         }
-        val request = HttpRequest.newBuilder(URI.create(settings.aiBaseUrl.trimEnd('/') + chatPath))
-            .header("Authorization", "Bearer ${settings.aiApiKey}")
+        val baseUrl = settings.aiBaseUrl.trim().trimEnd('/')
+        val path = if (baseUrl.endsWith("/v1") && chatPath.startsWith("/v1/")) {
+            chatPath.removePrefix("/v1")
+        } else chatPath
+        val builder = HttpRequest.newBuilder(URI.create(baseUrl + path))
+            .timeout(Duration.ofSeconds(90))
             .header("Content-Type", "application/json")
-            .POST(HttpRequest.BodyPublishers.ofString(body.toString()))
-            .build()
+        if (settings.aiApiKey.isNotBlank() && provider != AiProviderPreset.OLLAMA) {
+            builder.header("Authorization", "Bearer ${settings.aiApiKey.trim()}")
+        }
+        val request = builder.POST(HttpRequest.BodyPublishers.ofString(body.toString())).build()
         val response = client.send(request, HttpResponse.BodyHandlers.ofString())
         if (response.statusCode() !in 200..299) error("AI HTTP ${response.statusCode()}: ${response.body()}")
         return JsonParser.parseString(response.body()).asJsonObject["choices"].asJsonArray[0]

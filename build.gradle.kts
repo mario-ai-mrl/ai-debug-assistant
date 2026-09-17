@@ -4,7 +4,7 @@ plugins {
     id("org.jetbrains.intellij.platform") version "2.5.0"
 }
 
-group = "com.example.aidebug"
+group = "io.github.marioaimrl.aidebugassistant"
 version = "0.1.0"
 
 kotlin {
@@ -23,6 +23,15 @@ dependencies {
 }
 
 intellijPlatform {
+    buildSearchableOptions = false
+    pluginVerification {
+        ides { ide("IC", "2025.1") }
+    }
+    signing {
+        certificateChain = providers.environmentVariable("CERTIFICATE_CHAIN")
+        privateKey = providers.environmentVariable("PRIVATE_KEY")
+        password = providers.environmentVariable("PRIVATE_KEY_PASSWORD")
+    }
     pluginConfiguration {
         ideaVersion {
             sinceBuild = "251"
@@ -32,8 +41,4 @@ intellijPlatform {
 
 tasks {
     test { useJUnitPlatform() }
-    named("buildSearchableOptions") {
-        // This plugin has no searchable Settings page yet.
-        enabled = false
-    }
 }

@@ -9,7 +9,6 @@ import com.example.aidebug.model.DebugContext
 import com.example.aidebug.settings.DebugSettings
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowFactory
@@ -44,9 +43,10 @@ class DebugToolWindowFactory : ToolWindowFactory {
         }
         generatePatch.addActionListener {
             val context = lastContext ?: return@addActionListener
+            val settings = project.getService(DebugSettings::class.java).current()
+            if (!DataTransferConsent.confirm(project, settings, "生成修复补丁")) return@addActionListener
             generatePatch.isEnabled = false
             result.text = result.text + "\n\n正在生成修复补丁..."
-            val settings = project.getService(DebugSettings::class.java).current()
             ApplicationManager.getApplication().executeOnPooledThread {
                 try {
                     val patch = AiClient(settings).generatePatch(context)
@@ -66,30 +66,38 @@ class DebugToolWindowFactory : ToolWindowFactory {
         }
 
         analyze.addActionListener {
+            val settings = project.getService(DebugSettings::class.java).current()
+            if (!DataTransferConsent.confirm(project, settings, "分析 Bug")) return@addActionListener
+            val problemText = problem.text
+            val queryText = query.text
+            val editor = FileEditorManager.getInstance(project).selectedTextEditor
+            val selectedCode = editor?.selectionModel?.selectedText
+            val document = editor?.document
             analyze.isEnabled = false
             result.text = "正在收集代码、查询日志并请求 AI..."
-            val settings = project.getService(DebugSettings::class.java).current()
             ApplicationManager.getApplication().executeOnPooledThread {
                 try {
-                    val editor = FileEditorManager.getInstance(project).selectedTextEditor
-                    val psiFile = editor?.document?.let {
-                        com.intellij.psi.PsiDocumentManager.getInstance(project).getPsiFile(it)
-                    }
-                    val context = DebugContext(
-                        problem = problem.text,
-                        fileName = psiFile?.virtualFile?.path.orEmpty(),
-                        code = buildString {
-                            append(editor?.selectionModel?.selectedText
-                                ?: psiFile?.text?.take(80_000).orEmpty())
-                            val stackCode = StackTraceContextCollector.collect(project, problem.text)
+                    val (fileName, code) = ApplicationManager.getApplication().runReadAction<Pair<String, String>> {
+                        val psiFile = document?.let {
+                            com.intellij.psi.PsiDocumentManager.getInstance(project).getPsiFile(it)
+                        }
+                        val content = buildString {
+                            append(selectedCode ?: psiFile?.text?.take(80_000).orEmpty())
+                            val stackCode = StackTraceContextCollector.collect(project, problemText)
                             if (stackCode.isNotBlank()) {
                                 append("\n\n--- 堆栈定位代码 ---\n").append(stackCode)
                             }
-                        },
-                        stackTrace = problem.text,
+                        }
+                        psiFile?.virtualFile?.path.orEmpty() to content
+                    }
+                    val context = DebugContext(
+                        problem = problemText,
+                        fileName = fileName,
+                        code = code,
+                        stackTrace = problemText,
                         logs = run {
-                            val ids = TraceIdExtractor.extract(problem.text)
-                            val baseQuery = query.text.ifBlank { settings.lokiQuery }
+                            val ids = TraceIdExtractor.extract(problemText)
+                            val baseQuery = queryText.ifBlank { settings.lokiQuery }
                             val enrichedQuery = if (baseQuery.isNotBlank() && ids.isNotEmpty()) {
                                 val alternatives = ids.take(3).joinToString("|") { Regex.escape(it) }
                                 "$baseQuery |~ \"$alternatives\""
@@ -97,12 +105,14 @@ class DebugToolWindowFactory : ToolWindowFactory {
                             LokiClient(settings).queryRange(enrichedQuery)
                         },
                         gitDiff = GitDiffCollector.collect(project),
-                        traceIds = TraceIdExtractor.extract(problem.text)
+                        traceIds = TraceIdExtractor.extract(problemText)
                     )
-                    lastContext = context
-                    val location = StackTraceContextCollector.firstLocation(project, problem.text)
+                    val location = ApplicationManager.getApplication().runReadAction<StackTraceContextCollector.Location?> {
+                        StackTraceContextCollector.firstLocation(project, problemText)
+                    }
                     val answer = AiClient(settings).analyze(context)
                     SwingUtilities.invokeLater {
+                        lastContext = context
                         firstLocation = location
                         openLocation.isEnabled = location != null
                         copyResult.isEnabled = true

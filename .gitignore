@@ -25,6 +25,11 @@ Thumbs.db
 *.secret
 *.key
 *.pem
+*.crt
+*.p12
+*.pfx
+*.jks
+*.keystore
 
 # Logs and temporary files
 *.log

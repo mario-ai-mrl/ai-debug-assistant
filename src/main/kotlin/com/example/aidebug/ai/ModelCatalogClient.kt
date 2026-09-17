@@ -5,13 +5,14 @@ import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
+import java.time.Duration
 
 class ModelCatalogClient(
     private val provider: AiProviderPreset,
     private val baseUrl: String,
     private val apiKey: String
 ) {
-    private val client = HttpClient.newHttpClient()
+    private val client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build()
 
     fun fetchModels(): List<String> {
         val endpoint = when (provider) {
@@ -19,8 +20,14 @@ class ModelCatalogClient(
             AiProviderPreset.OLLAMA -> "/api/tags"
             else -> "/v1/models"
         }
-        val requestUrl = baseUrl.trim().trimEnd('/') + endpoint
-        val requestBuilder = HttpRequest.newBuilder(URI.create(requestUrl)).GET()
+        val normalizedBaseUrl = baseUrl.trim().trimEnd('/')
+        val path = if (normalizedBaseUrl.endsWith("/v1") && endpoint.startsWith("/v1/")) {
+            endpoint.removePrefix("/v1")
+        } else endpoint
+        val requestUrl = normalizedBaseUrl + path
+        val requestBuilder = HttpRequest.newBuilder(URI.create(requestUrl))
+            .timeout(Duration.ofSeconds(20))
+            .GET()
         if (apiKey.isNotBlank() && provider != AiProviderPreset.OLLAMA) {
             requestBuilder.header("Authorization", "Bearer ${apiKey.trim()}")
         }

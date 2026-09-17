@@ -8,9 +8,10 @@ import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.nio.charset.StandardCharsets
+import java.time.Duration
 
 class LokiClient(private val settings: DebugSettings.State) {
-    private val client = HttpClient.newHttpClient()
+    private val client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build()
 
     fun queryRange(query: String, minutes: Long = 15): String {
         if (settings.lokiBaseUrl.isBlank() || query.isBlank()) return ""
@@ -19,7 +20,9 @@ class LokiClient(private val settings: DebugSettings.State) {
         val url = settings.lokiBaseUrl.trimEnd('/') + "/loki/api/v1/query_range" +
             "?query=" + encode(query) + "&start=$start&end=$end&limit=200&direction=backward"
 
-        val builder = HttpRequest.newBuilder(URI.create(url)).GET()
+        val builder = HttpRequest.newBuilder(URI.create(url))
+            .timeout(Duration.ofSeconds(30))
+            .GET()
         if (settings.lokiToken.isNotBlank()) {
             builder.header("Authorization", "Bearer ${settings.lokiToken}")
         }

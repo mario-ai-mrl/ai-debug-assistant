@@ -1,6 +1,7 @@
 package com.example.aidebug.ui
 
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.Messages
 import com.example.aidebug.context.PatchApplyService
@@ -11,6 +12,7 @@ import java.awt.Dimension
 import javax.swing.JComponent
 import javax.swing.JButton
 import javax.swing.JPanel
+import javax.swing.SwingUtilities
 
 class PatchPreviewDialog(
     project: Project,
@@ -41,13 +43,17 @@ class PatchPreviewDialog(
             )
             if (answer != Messages.YES) return@addActionListener
             apply.isEnabled = false
-            val result = PatchApplyService.apply(projectRef, patch)
-            if (result.success) {
-                Messages.showInfoMessage(projectRef, result.message, "AI Debug Assistant")
-                close(OK_EXIT_CODE)
-            } else {
-                apply.isEnabled = true
-                Messages.showErrorDialog(projectRef, result.message, "补丁未应用")
+            ApplicationManager.getApplication().executeOnPooledThread {
+                val result = PatchApplyService.apply(projectRef, patch)
+                SwingUtilities.invokeLater {
+                    if (result.success) {
+                        Messages.showInfoMessage(projectRef, result.message, "AI Debug Assistant")
+                        close(OK_EXIT_CODE)
+                    } else {
+                        apply.isEnabled = true
+                        Messages.showErrorDialog(projectRef, result.message, "补丁未应用")
+                    }
+                }
             }
         }
         return JPanel(BorderLayout()).apply {
