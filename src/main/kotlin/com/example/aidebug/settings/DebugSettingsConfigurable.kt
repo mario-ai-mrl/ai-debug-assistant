@@ -59,10 +59,18 @@ class DebugSettingsConfigurable(private val project: Project) : Configurable {
                     cell(providerBox)
                     button("刷新模型") {
                         val provider = providerBox.selectedItem as? AiProviderPreset ?: return@button
+                        // The refresh button can be used before the user presses Apply.
+                        // Commit the form first so the freshly typed key is available.
+                        this@DebugSettingsConfigurable.apply()
+                        val liveSettings = settings.current()
                         val selectedModel = modelBox.selectedItem?.toString().orEmpty()
                         Thread {
                             try {
-                                val models = ModelCatalogClient(provider, aiBaseUrl, aiApiKey).fetchModels()
+                                val models = ModelCatalogClient(
+                                    provider,
+                                    liveSettings.aiBaseUrl,
+                                    liveSettings.aiApiKey
+                                ).fetchModels()
                                 javax.swing.SwingUtilities.invokeLater {
                                     modelBox.removeAllItems()
                                     models.forEach(modelBox::addItem)

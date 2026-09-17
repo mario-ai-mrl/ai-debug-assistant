@@ -19,12 +19,18 @@ class ModelCatalogClient(
             AiProviderPreset.OLLAMA -> "/api/tags"
             else -> "/v1/models"
         }
-        val requestBuilder = HttpRequest.newBuilder(URI.create(baseUrl.trimEnd('/') + endpoint)).GET()
+        val requestUrl = baseUrl.trim().trimEnd('/') + endpoint
+        val requestBuilder = HttpRequest.newBuilder(URI.create(requestUrl)).GET()
         if (apiKey.isNotBlank() && provider != AiProviderPreset.OLLAMA) {
-            requestBuilder.header("Authorization", "Bearer $apiKey")
+            requestBuilder.header("Authorization", "Bearer ${apiKey.trim()}")
         }
         val response = client.send(requestBuilder.build(), HttpResponse.BodyHandlers.ofString())
-        if (response.statusCode() !in 200..299) error("模型查询失败：HTTP ${response.statusCode()}")
+        if (response.statusCode() !in 200..299) {
+            error(
+                "模型查询失败：HTTP ${response.statusCode()}，" +
+                    " endpoint=$requestUrl，apiKeyPresent=${apiKey.isNotBlank()}"
+            )
+        }
         val root = JsonParser.parseString(response.body()).asJsonObject
         val array = root[if (provider == AiProviderPreset.OLLAMA) "models" else "data"]?.asJsonArray
             ?: return emptyList()
