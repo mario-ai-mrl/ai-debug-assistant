@@ -106,6 +106,7 @@ class DebugSettingsConfigurable(private val project: Project) : Configurable {
     }
 
     override fun isModified(): Boolean {
+        if (panel?.isModified() == true) return true
         val current = settings.current()
         val selectedModel = modelBox.selectedItem?.toString().orEmpty()
         return current.aiProvider != (providerBox.selectedItem as? AiProviderPreset)?.name ||
@@ -115,6 +116,9 @@ class DebugSettingsConfigurable(private val project: Project) : Configurable {
     }
 
     override fun apply() {
+        // Commit UI DSL bindings before reading the field values. Without this,
+        // the API key typed into the password field remains only in the widget.
+        panel?.apply()
         val current = settings.getState()
         current.aiProvider = (providerBox.selectedItem as? AiProviderPreset)?.name ?: AiProviderPreset.CUSTOM.name
         current.aiBaseUrl = aiBaseUrl.trim()
