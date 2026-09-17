@@ -1,0 +1,29 @@
+<idea-plugin>
+    <id>com.example.aidebug.assistant</id>
+    <name>AI Debug Assistant</name>
+    <vendor email="dev@example.com">AI Debug Assistant</vendor>
+
+    <description><![CDATA[
+        Analyze local code and Loki logs with DeepSeek or any OpenAI-compatible model.
+    ]]></description>
+
+    <depends>com.intellij.modules.platform</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <projectConfigurable
+                parentId="tools"
+                instance="com.example.aidebug.settings.DebugSettingsConfigurable"/>
+        <toolWindow id="AI Debug Assistant"
+                    anchor="right"
+                    factoryClass="com.example.aidebug.ui.DebugToolWindowFactory"/>
+    </extensions>
+
+    <actions>
+        <action id="AI.DebugAssistant.AnalyzeSelection"
+                class="com.example.aidebug.action.AnalyzeSelectionAction"
+                text="Analyze with AI Debug Assistant"
+                description="Analyze the selected code with AI and Loki logs">
+            <add-to-group group-id="EditorPopupMenu" anchor="last"/>
+        </action>
+    </actions>
+</idea-plugin>

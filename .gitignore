@@ -1,0 +1,35 @@
+# IntelliJ IDEA project files and local IDE state
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Gradle and Kotlin build/cache directories
+.gradle/
+.kotlin/
+build/
+out/
+.intellijPlatform/
+
+# OS/editor files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# Local environment and credentials
+.env
+.env.*
+!.env.example
+*.local
+*.secret
+*.key
+*.pem
+
+# Logs and temporary files
+*.log
+tmp/
+temp/
+
+# Generated plugin artifacts
+*.zip
